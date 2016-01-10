@@ -1,0 +1,134 @@
+PROGRAM czyt16
+-----------------------------------------------------------------------------
+----    CONST 
+-----------------------------------------------------------------------------
+CONST
+      INCREMENT   = 13849 	--RANDOM
+      MODULUS     = 65536  	--RANDOM
+      MULTIPLIER  = 25173 	--RANDOM
+      LIFTZ = 10 			--LIFT AFTER DRAWING
+-----------------------------------------------------------------------------
+----    VARS 
+-----------------------------------------------------------------------------
+VAR 
+p1,p2,p3,p4,cp :POSITION
+cx1, cx2,  x1, x2, cy1, cy2, y1, y2, z1, w1, pp1, r1, z2, w2, pp2, r2: REAL 	--utility pos unpos
+maxx, maxy, cenx, ceny, minx, miny, zzero, width, height: REAL 		--canvas params
+nx1, nx2, ny1, ny2: REAL 							--new xy
+seed     :INTEGER 
+lan: CONFIG
+-----------------------------------------------------------------------------
+----    RANDOM 
+-----------------------------------------------------------------------------
+ROUTINE random(seed : INTEGER) : REAL
+BEGIN
+  seed = (seed * MULTIPLIER + INCREMENT) MOD MODULUS
+  RETURN(seed/65535.0)
+END random
+-----------------------------------------------------------------------------
+----    MIN
+-----------------------------------------------------------------------------
+ROUTINE min(a , b : REAL) : REAL
+BEGIN
+  IF(a < b) THEN
+  RETURN (a)
+  ENDIF
+  RETURN (b)
+END min
+-----------------------------------------------------------------------------
+----    MAX
+-----------------------------------------------------------------------------
+ROUTINE max(a , b : REAL) : REAL
+BEGIN
+  IF(a >= b) THEN
+  RETURN (a)
+  ENDIF
+  RETURN (b)
+END max
+-----------------------------------------------------------------------------
+----    LINE
+-----------------------------------------------------------------------------
+ROUTINE line(xa, ya, xb, yb, w1, pp1, r1 : REAL; cp: POSITION)
+VAR
+	tp0, tp1, tp2, tp3: POSITION
+	x, y, z, w, p, r: REAL
+BEGIN
+	UNPOS(cp, x, y, z, w, p, r, lan) 		--check current position x, y
+	tp0 = POS(x, y, zzero + LIFTZ, w1, pp1, r1, lan)
+	tp1 = POS(xa, ya, zzero, w1, pp1, r1, lan)
+	tp3 = POS(xa, ya, zzero + LIFTZ, w1, pp1, r1, lan)
+	tp2 = POS(xb, yb, zzero, w1, pp1, r1, lan)
+	IF NOT (x = xa) OR NOT ( y = ya)  OR NOT (z = zzero) THEN
+	MOVE TO tp0				--lift
+	MOVE TO tp3				--move over start point
+	WITH $SPEED = 100 MOVE TO tp1	--drop to the start point carefully
+	ENDIF
+	MOVE TO tp2				--draw
+	cp = tp2					--update current position
+END line
+
+-----------------------------------------------------------------------------
+----    READ COORDINATES
+-----------------------------------------------------------------------------
+
+ROUTINE read_crds(rx1, ry1, rx2, ry2: REAL)	--replace with real loading
+BEGIN
+	rx1 = RANDOM(seed)
+	ry1 = RANDOM(seed)
+	rx2 = RANDOM(seed)
+	ry2 = RANDOM(seed)
+END read_crds
+-----------------------------------------------------------------------------
+----    MAIN PROGRAM
+-----------------------------------------------------------------------------
+BEGIN
+	
+-----------------------------------------------------------------------------
+----    SETUP 
+-----------------------------------------------------------------------------
+--PARAMETERS
+	seed = 150
+	--GET_TIME(seed) ;
+	$SPEED=700
+	$MOTYPE=LINEAR
+	$TERMTYPE=FINE
+--UNPOS + CORNERS
+	UNPOS(p1, x1, y1, z1, w1, pp1, r1, lan)
+	UNPOS(p2, x2, y2, z2, w2, pp2, r2, lan)
+	p3 = POS(x1, y2, z1, w1, pp1, r1, lan)
+	p4 = POS(x2, y1, z2, w2, pp2, r2, lan)
+--BOUNDARIES
+	minx = MIN(x1, x2)
+	miny = MIN(y1, y2)
+	maxx = MAX(x1, x2)
+	maxy = MAX(y1, y2)
+	zzero = MIN(z1, z2)
+	width = maxx - minx
+	height = maxy - miny
+	cenx = width/2 + minx
+	ceny = height/2 + miny
+	cx1 = cenx
+	cy1 = ceny
+	cp = p2
+-----------------------------------------------------------------------------
+----    DRAW 
+-----------------------------------------------------------------------------
+krok::
+	READ_CRDS(nx1, ny1, nx2, ny2) 	--loading (to do)
+	IF RANDOM(seed) > 0.5 THEN
+		cx1 = nx1 * width  + minx  
+		cy1 = ny1 * height + miny  
+	ENDIF
+	cx2 = nx2 * width  + minx
+	cy2 = ny2 * height + miny
+	
+	LINE(cx1, cy1, cx2, cy2, w1, pp1, r1, cp)
+	cx1 = cx2
+	cy1 = cy2
+IF (cx1 < maxx) AND (cx1 > minx) AND (cy1 < maxy) AND (cy1 > miny) THEN 	
+GO TO krok
+ENDIF
+-----------------------------------------------------------------------------
+----    END 
+-----------------------------------------------------------------------------
+END czyt16
